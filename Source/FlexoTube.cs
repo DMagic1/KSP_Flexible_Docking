@@ -25,6 +25,20 @@ namespace FlexoTubes
 		[KSPField(guiActive = true)]
 		public string Status = "Retracted (Basic Mode)";
 		[KSPField(guiActive = true)]
+		public string Magnets = "Enabled";
+		[KSPField(isPersistant = true)]
+		public bool MagnetsEnabled = true;
+
+		[KSPField]
+		public float activeForce = 0.2f;
+		[KSPField]
+		public float activeTorque = 0.2f;
+		[KSPField]
+		public float activeRange = 1f;
+		[KSPField]
+		public float activeReEngage = 1.5f;
+
+		[KSPField(guiActive = true)]
 		public string BaseState = "Ready";
 		[KSPField(guiActive = true)]
 		public string OtherNodeID = "";
@@ -107,8 +121,15 @@ namespace FlexoTubes
 		private Transform referenceRotationTransform;
 		private float cachedAcquireForce;
 		private float cachedAcquireTorque;
+		private float cachedAcquireRange;
+		private float cachedReEngage;
 		private bool moving;
 		private bool resetting;
+
+		private ModuleDockingNode cachedOtherNode;
+		private float cachedOtherNodeForce = 2;
+		private float cachedOtherNodeTorque = 2;
+		private float cachedOtherNodeRange = 0.5f;
 
 		public float theta = 0;
 		public float dist = 0;
@@ -135,18 +156,38 @@ namespace FlexoTubes
 
 			cachedAcquireForce = acquireForce;
 			cachedAcquireTorque = acquireTorque;
+			cachedAcquireRange = acquireRange;
+			cachedReEngage = minDistanceToReEngage;
 
 			lastYTransFrame = startFrame;
 			lastXTransFrame = startFrame;
 			lastYRotFrame = startFrame;
 			lastXRotFrame = startFrame;
 
+			Events["ToggleMagnets"].guiName = "Toggle Magnets";
+
+			if (!MagnetsEnabled)
+			{
+				acquireForce = 0;
+				acquireTorque = 0;
+				Magnets = "Disabled";
+			}
+			else
+				Magnets = "Enabled";
+
 			if (IsDeployed)
 			{
 				extensionAnimator(1, 1);
 				setRest = true;
-				acquireForce = 0;
-				acquireTorque = 0;
+
+				if (MagnetsEnabled)
+				{
+					acquireForce = activeForce;
+					acquireTorque = activeTorque;
+				}
+
+				acquireRange = activeRange;
+				minDistanceToReEngage = activeReEngage;
 				switch (this.state)
 				{
 					case "PreAttached":
@@ -203,9 +244,40 @@ namespace FlexoTubes
 			Enabled = (!base.IsDisabled).ToString();
 
 			if (otherNode == null)
+			{
 				OtherNodeID = "Not Set";
+				if (cachedOtherNode != null)
+				{
+					cachedOtherNode.acquireForce = cachedOtherNodeForce;
+					cachedOtherNode.acquireTorque = cachedOtherNodeTorque;
+					cachedOtherNode.acquireRange = cachedOtherNodeRange;
+					cachedOtherNode = null;
+				}
+			}
 			else
+			{
+				if (cachedOtherNode != otherNode)
+				{
+					cachedOtherNode = otherNode;
+					cachedOtherNodeForce = otherNode.acquireForce;
+					cachedOtherNodeTorque = otherNode.acquireTorque;
+					cachedOtherNodeRange = otherNode.acquireRange;
+
+					if (MagnetsEnabled)
+					{
+						otherNode.acquireForce = activeForce;
+						otherNode.acquireTorque = activeTorque;
+					}
+					else
+					{
+						otherNode.acquireForce = 0;
+						otherNode.acquireTorque = 0;
+					}
+					otherNode.acquireRange = activeRange;
+				}
+
 				OtherNodeID = otherNode.part.flightID.ToString();
+			}
 
 			if (showLineSet)
 			{
@@ -250,7 +322,10 @@ namespace FlexoTubes
 				return;
 
 			if (resetting)
+			{
 				setRestPosition(2);
+				return;
+			}
 
 			switch(state)
 			{
@@ -263,7 +338,23 @@ namespace FlexoTubes
 					setDockedPosition();
 					break;
 				case "Acquire":
+					setAcquiringPosition();
+					break;
 				case "Acquire (dockee)":
+					if (otherNode == null)
+					{
+						if (setRest)
+							setRestPosition(1);
+
+						break;
+					}
+					if (otherNode.GetType() == typeof(FlexoTube))
+					{
+						if (setRest)
+							setRestPosition(1);
+
+						break;
+					}
 					setAcquiringPosition();
 					break;
 				case "Ready":
@@ -283,10 +374,14 @@ namespace FlexoTubes
 			switch (state)
 			{
 				case "PreAttached":
+					Events["Deploy"].active = false;
+					Events["Retract"].active = false;
 					return "Attached";
 				case "Docked (same vessel)":
 				case "Docked (docker)":
 				case "Docked (dockee)":
+					Events["Deploy"].active = false;
+					Events["Retract"].active = false;
 					return "Docked";
 				case "Acquire":
 				case "Acquire (dockee)":
@@ -294,14 +389,21 @@ namespace FlexoTubes
 			}
 
 			if (IsDeployed)
+			{
+				Events["Deploy"].active = false;
+				Events["Retract"].active = true;
 				return "Deployed (Flexible Mode)";
+			}
 			else
+			{
+				Events["Deploy"].active = true;
+				Events["Retract"].active = false;
 				return "Retracted (Basic Mode)";
+			}
 		}
 
 		private void setDockedPosition()
 		{
-
 			setTranslation(targetYTransFrame, targetXTransFrame);
 			setRotation(targetYRotFrame, targetXRotFrame);
 		}
@@ -315,6 +417,8 @@ namespace FlexoTubes
 			int newXTranTarget = getNewFrame(targetXTransFrame, lastXTransFrame, 2);
 
 			setTranslation(newYTranTarget, newXTranTarget);
+
+			//calculateNewRotation();
 
 			int newYRotTarget = getNewFrame(targetYRotFrame, lastYRotFrame, 2);
 
@@ -429,6 +533,15 @@ namespace FlexoTubes
 
 		private void calculateNewRotation(Vector3 dir)
 		{
+			if (referenceRotationTransform == null || referenceTranslateTransform == null)
+			{
+				targetYTransFrame = startFrame;
+				targetXTransFrame = startFrame;
+				return;
+			}
+
+			//Vector3 dir = referenceTranslateTransform.forward;
+
 			Vector3 ori = referenceRotationTransform.position;
 
 			Vector3 newZ = referenceRotationTransform.forward;
@@ -486,7 +599,7 @@ namespace FlexoTubes
 			NewAngleX = angX.ToString("F3");
 			NewAngleY = angY.ToString("F3");
 
-			angX *= 2;
+			angX *= -2;
 			angY *= -2;
 
 			float XShift = angX / frameRot;
@@ -670,7 +783,7 @@ namespace FlexoTubes
 		}
 
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, externalToEVAOnly = true, active = true)]
-		private void Deploy()
+		public void Deploy()
 		{
 			if (resetting)
 				StopCoroutine("restThenRetract");
@@ -680,20 +793,35 @@ namespace FlexoTubes
 			setRest = true;
 
 			IsDeployed = true;
-			acquireForce = 0;
-			acquireTorque = 0;
+
+			if (MagnetsEnabled)
+			{
+				acquireForce = activeForce;
+				acquireTorque = activeTorque;
+			}
+			else
+			{
+				acquireForce = 0;
+				acquireTorque = 0;
+			}
+
+			acquireRange = activeRange;
+			minDistanceToReEngage = activeReEngage;
 
 			Events["Deploy"].active = false;
 			Events["Retract"].active = true;
 		}
 
 		[KSPEvent(guiActive = true, guiActiveUnfocused = true, externalToEVAOnly = true, active = false)]
-		private void Retract()
+		public void Retract()
 		{
+			if (resetting)
+				return;
+
 			Events["Deploy"].active = true;
 			Events["Retract"].active = false;
 
-			if (this.state == "Acquire")
+			if (this.state == "Acquire" || this.state == "Acquire (dockee)")
 				StartCoroutine("restThenRetract");
 			else
 			{
@@ -704,9 +832,75 @@ namespace FlexoTubes
 				extensionAnimator(-1, 1);
 
 				IsDeployed = false;
-				acquireForce = cachedAcquireForce;
-				acquireTorque = cachedAcquireTorque;
+
+				if (MagnetsEnabled)
+				{
+					acquireForce = cachedAcquireForce;
+					acquireTorque = cachedAcquireTorque;
+				}
+				else
+				{
+					acquireForce = 0;
+					acquireTorque = 0;
+				}
+
+				acquireRange = cachedAcquireRange;
+				minDistanceToReEngage = cachedReEngage;
 			}
+		}
+
+		[KSPEvent(guiActive = true, guiActiveUnfocused = true, externalToEVAOnly = true, active = true)]
+		public void ToggleMagnets()
+		{
+			if (MagnetsEnabled)
+			{
+				MagnetsEnabled = false;
+				Magnets = "Disabled";
+				acquireForce = 0;
+				acquireTorque = 0;
+			}
+			else
+			{
+				MagnetsEnabled = true;
+				Magnets = "Enabled";
+				if (IsDeployed)
+				{
+					acquireForce = activeForce;
+					acquireTorque = activeTorque;
+				}
+				else
+				{
+					acquireForce = cachedAcquireForce;
+					acquireTorque = cachedAcquireTorque;
+				}
+			}
+		}
+
+		[KSPAction("Deploy Tube")]
+		public void DeployAction(KSPActionParam param)
+		{
+			Deploy();
+		}
+
+		[KSPAction("Retract Tube")]
+		public void RetractAction(KSPActionParam param)
+		{
+			Retract();
+		}
+
+		[KSPAction("Toggle Tube")]
+		public void ToggleAction(KSPActionParam param)
+		{
+			if (IsDeployed)
+				Retract();
+			else
+				Deploy();
+		}
+
+		[KSPAction("Toggle Magnets")]
+		public void MagnetsAction(KSPActionParam param)
+		{
+			ToggleMagnets();
 		}
 
 		private void stopAllAnimators()
@@ -730,7 +924,20 @@ namespace FlexoTubes
 
 			extensionAnimator(-1, 1);
 			IsDeployed = false;
-			acquireForce = cachedAcquireForce;
+
+			if (MagnetsEnabled)
+			{
+				acquireForce = cachedAcquireForce;
+				acquireTorque = cachedAcquireTorque;
+			}
+			else
+			{
+				acquireForce = 0;
+				acquireTorque = 0;
+			}
+
+			acquireRange = cachedAcquireRange;
+			minDistanceToReEngage = cachedReEngage;
 
 			resetting = false;
 		}
