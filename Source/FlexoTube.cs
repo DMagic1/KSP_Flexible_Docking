@@ -1,4 +1,30 @@
-﻿using System;
+﻿#region license
+/*The MIT License (MIT)
+FlexoTube - Part module to control flexible docking ports
+
+Copyright (c) 2016 DMagic
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+#endregion
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,34 +52,40 @@ namespace FlexoTubes
 		public string Status = "Retracted (Basic Mode)";
 		[KSPField(guiActive = true)]
 		public string Magnets = "Enabled";
+		[KSPField(guiActive = true)]
+		public string MagneticForce = "";
+		[KSPField(guiActive = true)]
+		public string MagneticTorque = "";
+
 		[KSPField(isPersistant = true)]
 		public bool MagnetsEnabled = true;
 
 		[KSPField]
-		public float activeForce = 0.2f;
+		public float activeForce = 0.1f;
 		[KSPField]
-		public float activeTorque = 0.2f;
+		public float activeTorque = 0.1f;
 		[KSPField]
 		public float activeRange = 1f;
 		[KSPField]
 		public float activeReEngage = 1.5f;
 
-		[KSPField(guiActive = true)]
-		public string BaseState = "Ready";
-		[KSPField(guiActive = true)]
-		public string OtherNodeID = "";
-		[KSPField(guiActive = true)]
-		public string Enabled = "...";
+		//[KSPField(guiActive = true)]
+		//public string BaseState = "Ready";
+		//[KSPField(guiActive = true)]
+		//public string OtherNodeID = "";
+		//[KSPField(guiActive = true)]
+		//public string Enabled = "...";
+
 		//[KSPField(guiActive = true)]
 		//public string Angle = "0";
 		//[KSPField(guiActive = true)]
 		//public string Distance = "0";
 		//[KSPField(guiActive = true)]
 		//public string DistanceFixed = "0";
-		[KSPField(guiActive = true)]
-		public string Pos = "0";
-		[KSPField(guiActive = true)]
-		public string OtherPos = "0";
+		//[KSPField(guiActive = true)]
+		//public string Pos = "0";
+		//[KSPField(guiActive = true)]
+		//public string OtherPos = "0";
 		//[KSPField(guiActive = true)]
 		//public string PosOtherPos = "0";
 		//[KSPField(guiActive = true)]
@@ -64,36 +96,36 @@ namespace FlexoTubes
 		//public string Front = "0";
 		//[KSPField(guiActive = true)]
 		//public string FlatLine = "0";
-		[KSPField(guiActive = true)]
-		public string YTime = "0";
-		[KSPField(guiActive = true)]
-		public string YFrame = "0";
-		[KSPField(guiActive = true)]
-		public string XTime = "0";
-		[KSPField(guiActive = true)]
-		public string XFrame = "0";
-		[KSPField(guiActive = true)]
-		public string RotDir = "";
-		[KSPField(guiActive = true)]
-		public string AngleX = "";
-		[KSPField(guiActive = true)]
-		public string AngleY = "";
-		[KSPField(guiActive = true)]
-		public string NewAngleX = "";
-		[KSPField(guiActive = true)]
-		public string NewAngleY = "";
-		[KSPField(guiActive = true)]
-		public string TransRot = "";
-		[KSPField(guiActive = true)]
-		public string TransRotStart = "";
-		[KSPField(guiActive = true)]
-		public string FrontX = "";
-		[KSPField(guiActive = true)]
-		public string FrontY = "";
-		[KSPField(guiActive = true)]
-		public string DirX = "";
-		[KSPField(guiActive = true)]
-		public string DirY = "";
+		//[KSPField(guiActive = true)]
+		//public string YTime = "0";
+		//[KSPField(guiActive = true)]
+		//public string YFrame = "0";
+		//[KSPField(guiActive = true)]
+		//public string XTime = "0";
+		//[KSPField(guiActive = true)]
+		//public string XFrame = "0";
+		//[KSPField(guiActive = true)]
+		//public string RotDir = "";
+		//[KSPField(guiActive = true)]
+		//public string AngleX = "";
+		//[KSPField(guiActive = true)]
+		//public string AngleY = "";
+		//[KSPField(guiActive = true)]
+		//public string NewAngleX = "";
+		//[KSPField(guiActive = true)]
+		//public string NewAngleY = "";
+		//[KSPField(guiActive = true)]
+		//public string TransRot = "";
+		//[KSPField(guiActive = true)]
+		//public string TransRotStart = "";
+		//[KSPField(guiActive = true)]
+		//public string FrontX = "";
+		//[KSPField(guiActive = true)]
+		//public string FrontY = "";
+		//[KSPField(guiActive = true)]
+		//public string DirX = "";
+		//[KSPField(guiActive = true)]
+		//public string DirY = "";
 
 		private const int frames = 401;
 		private const int startFrame = 200;
@@ -139,7 +171,7 @@ namespace FlexoTubes
 		public bool rotTrans = true;
 		private Vector3 refDir;
 
-		private FlexoTestWindow flexoWindow;
+		//private FlexoTestWindow flexoWindow;
 
 		public override void OnStart(PartModule.StartState state)
 		{
@@ -148,7 +180,7 @@ namespace FlexoTubes
 			anim = part.FindModelAnimators()[0];
 			referenceTranslateTransform = part.FindModelTransform("ReferenceTransform");
 			referenceRotationTransform = part.FindModelTransform("ReferenceRotation");
-			TransRotStart = referenceTranslateTransform.rotation.eulerAngles.ToString("F3");
+			//TransRotStart = referenceTranslateTransform.rotation.eulerAngles.ToString("F3");
 			refDir = referenceTranslateTransform.up;
 
 			frameDist = (maxTranslate * 2) / (float)((frames - 1) / 2);
@@ -238,14 +270,16 @@ namespace FlexoTubes
 
 		public override void OnUpdate()
 		{
-			BaseState = this.state;
+			//BaseState = this.state;
 			Status = setStatus();
+			MagneticForce = acquireForce.ToString("N2");
+			MagneticTorque = acquireTorque.ToString("N2");
 
-			Enabled = (!base.IsDisabled).ToString();
+			//Enabled = (!base.IsDisabled).ToString();
 
 			if (otherNode == null)
 			{
-				OtherNodeID = "Not Set";
+				//OtherNodeID = "Not Set";
 				if (cachedOtherNode != null)
 				{
 					cachedOtherNode.acquireForce = cachedOtherNodeForce;
@@ -256,14 +290,14 @@ namespace FlexoTubes
 			}
 			else
 			{
-				if (cachedOtherNode != otherNode)
+				if (cachedOtherNode == null || cachedOtherNode != otherNode)
 				{
 					cachedOtherNode = otherNode;
 					cachedOtherNodeForce = otherNode.acquireForce;
 					cachedOtherNodeTorque = otherNode.acquireTorque;
 					cachedOtherNodeRange = otherNode.acquireRange;
 
-					if (MagnetsEnabled)
+					if (MagnetsEnabled && IsDeployed)
 					{
 						otherNode.acquireForce = activeForce;
 						otherNode.acquireTorque = activeTorque;
@@ -273,18 +307,20 @@ namespace FlexoTubes
 						otherNode.acquireForce = 0;
 						otherNode.acquireTorque = 0;
 					}
-					otherNode.acquireRange = activeRange;
+
+					if (IsDeployed)
+						otherNode.acquireRange = activeRange;
 				}
 
-				OtherNodeID = otherNode.part.flightID.ToString();
+				//OtherNodeID = otherNode.part.flightID.ToString();
 			}
 
-			if (showLineSet)
-			{
-				//drawLine(nodeTransform.position, nodeTransform.position + nodeTransform.forward.normalized, XKCDColors.LightGreen);
-				//drawLine(nodeTransform.position, nodeTransform.position + nodeTransform.up.normalized, XKCDColors.DarkGreen);
-				drawLine(referenceRotationTransform.position, referenceRotationTransform.position + referenceRotationTransform.forward.normalized, XKCDColors.DarkRed);
-			}
+			//if (showLineSet)
+			//{
+			//	//drawLine(nodeTransform.position, nodeTransform.position + nodeTransform.forward.normalized, XKCDColors.LightGreen);
+			//	//drawLine(nodeTransform.position, nodeTransform.position + nodeTransform.up.normalized, XKCDColors.DarkGreen);
+			//	drawLine(referenceRotationTransform.position, referenceRotationTransform.position + referenceRotationTransform.forward.normalized, XKCDColors.DarkRed);
+			//}
 			//else
 			//{
 			//	drawLine(referenceTransform.position, referenceTransform.position + referenceTransform.forward.normalized, XKCDColors.LightGreen);
@@ -441,7 +477,7 @@ namespace FlexoTubes
 				referenceTranslateTransform.rotation = Quaternion.LookRotation(otherNode.nodeTransform.forward * -1f, otherNode.nodeTransform.up);
 			}
 
-			TransRot = referenceTranslateTransform.rotation.eulerAngles.ToString("F3");
+			//TransRot = referenceTranslateTransform.rotation.eulerAngles.ToString("F3");
 
 			if (showLineSet)
 			{
@@ -548,12 +584,12 @@ namespace FlexoTubes
 			Vector3 newY = referenceRotationTransform.up;
 			Vector3 newX = referenceRotationTransform.right;
 
-			if (!showLineSet)
-			{
-				drawLine(ori, ori + newZ, Color.black);
-				drawLine(ori, ori + newY, Color.black);
-				drawLine(ori, ori + newX, Color.black);
-			}
+			//if (!showLineSet)
+			//{
+			//	drawLine(ori, ori + newZ, Color.black);
+			//	drawLine(ori, ori + newY, Color.black);
+			//	drawLine(ori, ori + newX, Color.black);
+			//}
 
 			float rotXX = Vector3.Dot(newZ, dir);
 			float rotXY = Vector3.Dot(newY, dir);
@@ -561,11 +597,11 @@ namespace FlexoTubes
 			float rotYX = Vector3.Dot(newZ, dir);
 			float rotYY = Vector3.Dot(newX, dir);
 
-			DirX = new Vector2(rotXY, rotXX).ToString("F3");
-			DirY = new Vector2(rotYY, rotYX).ToString("F3");
+			//DirX = new Vector2(rotXY, rotXX).ToString("F3");
+			//DirY = new Vector2(rotYY, rotYX).ToString("F3");
 
-			FrontX = new Vector2(Vector3.Dot(newY, newZ), Vector3.Dot(newZ, newZ)).ToString("F3");
-			FrontY = new Vector2(Vector3.Dot(newX, newZ), Vector3.Dot(newZ, newZ)).ToString("F3");
+			//FrontX = new Vector2(Vector3.Dot(newY, newZ), Vector3.Dot(newZ, newZ)).ToString("F3");
+			//FrontY = new Vector2(Vector3.Dot(newX, newZ), Vector3.Dot(newZ, newZ)).ToString("F3");
 
 			float angX = Mathf.Atan2(rotXY, rotXX);
 			float angY = Mathf.Atan2(rotYY, rotYX);
@@ -573,18 +609,18 @@ namespace FlexoTubes
 			angX *= Mathf.Rad2Deg;
 			angY *= Mathf.Rad2Deg;
 
-			AngleX = angX.ToString("F3");
-			AngleY = angY.ToString("F3");
+			//AngleX = angX.ToString("F3");
+			//AngleY = angY.ToString("F3");
 
-			if (!showLineSet)
-			{
-				//drawLine(p2, p1, XKCDColors.DarkGreen);
-				//drawLine(nodeTransform.position, nodeTransform.position + rot, Color.blue);
-			}
-			else
-			{
-				drawLine(nodeTransform.position, nodeTransform.position + dir, Color.blue);
-			}
+			//if (!showLineSet)
+			//{
+			//	//drawLine(p2, p1, XKCDColors.DarkGreen);
+			//	//drawLine(nodeTransform.position, nodeTransform.position + rot, Color.blue);
+			//}
+			//else
+			//{
+			//	drawLine(nodeTransform.position, nodeTransform.position + dir, Color.blue);
+			//}
 
 			float radius = Mathf.Sqrt(angX * angX + angY * angY);
 
@@ -596,8 +632,8 @@ namespace FlexoTubes
 				angY = radius * Mathf.Sin(theta);
 			}
 
-			NewAngleX = angX.ToString("F3");
-			NewAngleY = angY.ToString("F3");
+			//NewAngleX = angX.ToString("F3");
+			//NewAngleY = angY.ToString("F3");
 
 			angX *= -2;
 			angY *= -2;
@@ -619,20 +655,20 @@ namespace FlexoTubes
 			targetYRotFrame = startFrame + (int)YShift;
 		}
 
-		private void drawLine(Vector3 start, Vector3 end, Color c)
-		{
-			GameObject line = new GameObject();
-			line.transform.position = start;
-			line.AddComponent<LineRenderer>();
-			LineRenderer lr = line.GetComponent<LineRenderer>();
-			lr.material = new Material(Shader.Find("Particles/Alpha Blended Premultiply"));
-			lr.SetColors(c, c * 0.3f);
-			lr.SetWidth(0.1f, 0.05f);
+		//private void drawLine(Vector3 start, Vector3 end, Color c)
+		//{
+		//	GameObject line = new GameObject();
+		//	line.transform.position = start;
+		//	line.AddComponent<LineRenderer>();
+		//	LineRenderer lr = line.GetComponent<LineRenderer>();
+		//	lr.material = new Material(Shader.Find("Particles/Alpha Blended Premultiply"));
+		//	lr.SetColors(c, c * 0.3f);
+		//	lr.SetWidth(0.1f, 0.05f);
 
-			lr.SetPosition(0, start);
-			lr.SetPosition(1, end);
-			Destroy(line, TimeWarp.deltaTime);
-		}
+		//	lr.SetPosition(0, start);
+		//	lr.SetPosition(1, end);
+		//	Destroy(line, TimeWarp.deltaTime);
+		//}
 
 		private void setRestPosition(int step)
 		{
@@ -692,11 +728,11 @@ namespace FlexoTubes
 			anim[yTranslateName].normalizedTime = yTime;
 			anim.Blend(yTranslateName, 0.5f);
 
-			YTime = anim[yTranslateName].normalizedTime.ToString("F4");
-			YFrame = (anim[yTranslateName].normalizedTime * frames).ToString("F1");
+			//YTime = anim[yTranslateName].normalizedTime.ToString("F4");
+			//YFrame = (anim[yTranslateName].normalizedTime * frames).ToString("F1");
 
-			XTime = anim[xTranslateName].normalizedTime.ToString("F4");
-			XFrame = (anim[xTranslateName].normalizedTime * frames).ToString("F1");
+			//XTime = anim[xTranslateName].normalizedTime.ToString("F4");
+			//XFrame = (anim[xTranslateName].normalizedTime * frames).ToString("F1");
 
 			lastYTransFrame = yTrans;
 			lastXTransFrame = xTrans;
@@ -724,11 +760,11 @@ namespace FlexoTubes
 			anim[rotXName].normalizedTime = xTime;
 			anim.Blend(rotXName, 1);
 
-			YTime = anim[rotYName].normalizedTime.ToString("F4");
-			YFrame = (anim[rotYName].normalizedTime * frames).ToString("F1");
+			//YTime = anim[rotYName].normalizedTime.ToString("F4");
+			//YFrame = (anim[rotYName].normalizedTime * frames).ToString("F1");
 
-			XTime = anim[rotXName].normalizedTime.ToString("F4");
-			XFrame = (anim[rotXName].normalizedTime * frames).ToString("F1");
+			//XTime = anim[rotXName].normalizedTime.ToString("F4");
+			//XFrame = (anim[rotXName].normalizedTime * frames).ToString("F1");
 
 			lastYRotFrame = yAxis;
 			lastXRotFrame = xAxis;
@@ -958,36 +994,36 @@ namespace FlexoTubes
 			}
 		}
 
-		[KSPEvent(active = true, guiActive = true)]
-		public void OpenWindow()
-		{
-			if (flexoWindow == null)
-			{
-				flexoWindow = gameObject.AddComponent<FlexoTestWindow>();
-				flexoWindow.setup(this);
-			}
+		//[KSPEvent(active = true, guiActive = true)]
+		//public void OpenWindow()
+		//{
+		//	if (flexoWindow == null)
+		//	{
+		//		flexoWindow = gameObject.AddComponent<FlexoTestWindow>();
+		//		flexoWindow.setup(this);
+		//	}
 
-			flexoWindow.Visible = true;
+		//	flexoWindow.Visible = true;
 
-			Events["OpenWindow"].active = false;
-			Events["CloseWindow"].active = true;
-		}
+		//	Events["OpenWindow"].active = false;
+		//	Events["CloseWindow"].active = true;
+		//}
 
-		[KSPEvent(active = false, guiActive = true)]
-		public void CloseWindow()
-		{
-			if (flexoWindow == null)
-			{
-				Events["OpenWindow"].active = true;
-				Events["CloseWindow"].active = false;
-				return;
-			}
+		//[KSPEvent(active = false, guiActive = true)]
+		//public void CloseWindow()
+		//{
+		//	if (flexoWindow == null)
+		//	{
+		//		Events["OpenWindow"].active = true;
+		//		Events["CloseWindow"].active = false;
+		//		return;
+		//	}
 
-			flexoWindow.Visible = false;
+		//	flexoWindow.Visible = false;
 
-			Events["OpenWindow"].active = true;
-			Events["CloseWindow"].active = false;
-		}
+		//	Events["OpenWindow"].active = true;
+		//	Events["CloseWindow"].active = false;
+		//}
 
 		public Animation Anim
 		{
