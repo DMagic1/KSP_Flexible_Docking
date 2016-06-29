@@ -68,13 +68,19 @@ namespace FlexoTubes
 		public float activeRange = 1f;
 		[KSPField]
 		public float activeReEngage = 1.5f;
+		//[KSPField(guiActive = true)]
+		//public string AcquireDistance = "";
 
 		//[KSPField(guiActive = true)]
-		//public string BaseState = "Ready";
+		//public string OtherNodeStatus = "";
 		//[KSPField(guiActive = true)]
-		//public string OtherNodeID = "";
+		//public string OtherNodeState = "";
 		//[KSPField(guiActive = true)]
-		//public string Enabled = "...";
+		//public string OtherNodeForceTorque = "";
+		//[KSPField(guiActive = true)]
+		//public string OtherNodeDistance = "";
+		//[KSPField(guiActive = true)]
+		//public string OtherNodeOtherID = "";
 
 		//[KSPField(guiActive = true)]
 		//public string Angle = "0";
@@ -177,6 +183,9 @@ namespace FlexoTubes
 		{
 			base.OnStart(state);
 
+			if (state == StartState.Editor)
+				return;
+
 			anim = part.FindModelAnimators()[0];
 			referenceTranslateTransform = part.FindModelTransform("ReferenceTransform");
 			referenceRotationTransform = part.FindModelTransform("ReferenceRotation");
@@ -252,9 +261,6 @@ namespace FlexoTubes
 					Events["Retract"].active = false;
 				}
 			}
-
-			Events["OpenWindow"].active = true;
-			Events["CloseWindow"].active = false;
 		}
 
 		public override string GetInfo()
@@ -274,6 +280,7 @@ namespace FlexoTubes
 			Status = setStatus();
 			MagneticForce = acquireForce.ToString("N2");
 			MagneticTorque = acquireTorque.ToString("N2");
+			//AcquireDistance = acquireRange.ToString("N1");
 
 			//Enabled = (!base.IsDisabled).ToString();
 
@@ -282,34 +289,57 @@ namespace FlexoTubes
 				//OtherNodeID = "Not Set";
 				if (cachedOtherNode != null)
 				{
+					print("[Flexo] Resetting other node values...");
 					cachedOtherNode.acquireForce = cachedOtherNodeForce;
 					cachedOtherNode.acquireTorque = cachedOtherNodeTorque;
-					cachedOtherNode.acquireRange = cachedOtherNodeRange;
+					//cachedOtherNode.acquireRange = cachedOtherNodeRange;
 					cachedOtherNode = null;
 				}
 			}
 			else
 			{
+				
+				//OtherNodeState = otherNode.state;
+				//OtherNodeForceTorque = otherNode.acquireForce.ToString("N1") + " / " + otherNode.acquireTorque.ToString("N1");
+				//OtherNodeDistance = otherNode.acquireRange.ToString("N1");
+				//if (otherNode.otherNode != null)
+				//{
+				//	OtherNodeStatus = "Set";
+				//	OtherNodeOtherID = otherNode.otherNode.part.flightID.ToString();
+				//}
+				//else
+				//	OtherNodeStatus = "Null";
+
 				if (cachedOtherNode == null || cachedOtherNode != otherNode)
 				{
+					print("[Flexo] Setting other node values...");
 					cachedOtherNode = otherNode;
 					cachedOtherNodeForce = otherNode.acquireForce;
 					cachedOtherNodeTorque = otherNode.acquireTorque;
-					cachedOtherNodeRange = otherNode.acquireRange;
+					//cachedOtherNodeRange = otherNode.acquireRange;
 
-					if (MagnetsEnabled && IsDeployed)
+					if (IsDeployed)
 					{
-						otherNode.acquireForce = activeForce;
-						otherNode.acquireTorque = activeTorque;
+						//otherNode.acquireRange = activeRange;
+						if (MagnetsEnabled)
+						{
+							otherNode.acquireForce = activeForce;
+							otherNode.acquireTorque = activeTorque;
+						}
+						else
+						{
+							otherNode.acquireForce = 0;
+							otherNode.acquireTorque = 0;
+						}
 					}
 					else
 					{
-						otherNode.acquireForce = 0;
-						otherNode.acquireTorque = 0;
+						if (!MagnetsEnabled)
+						{
+							otherNode.acquireForce = 0;
+							otherNode.acquireTorque = 0;
+						}
 					}
-
-					if (IsDeployed)
-						otherNode.acquireRange = activeRange;
 				}
 
 				//OtherNodeID = otherNode.part.flightID.ToString();
@@ -333,20 +363,8 @@ namespace FlexoTubes
 				return;
 			}
 
-			if (anim.IsPlaying(extendName))
-				return;
-
-			if (IsDeployed)
-			{
-				if (!anim.IsPlaying(extendName))
-					moving = false;
-			}
-			else
-			{
-				if (!anim.IsPlaying(extendName))
-					moving = false;
-			}
-
+			if (!anim.IsPlaying(extendName))
+				moving = false;
 		}
 
 		private void LateUpdate()
@@ -420,8 +438,9 @@ namespace FlexoTubes
 					Events["Retract"].active = false;
 					return "Docked";
 				case "Acquire":
-				case "Acquire (dockee)":
 					return "Acquiring...";
+				case "Acquire (dockee)":
+					return "Acquiring (dockee)...";
 			}
 
 			if (IsDeployed)
@@ -683,6 +702,11 @@ namespace FlexoTubes
 			int newXRotTarget = getNewFrame(startFrame, lastXRotFrame, step);
 
 			setRotation(newYRotTarget, newXRotTarget);
+
+			targetXRotFrame = startFrame;
+			targetXTransFrame = startFrame;
+			targetYRotFrame = startFrame;
+			targetYTransFrame = startFrame;
 		}
 
 		private int getNewFrame(int target, int last, int step)
@@ -894,6 +918,12 @@ namespace FlexoTubes
 				Magnets = "Disabled";
 				acquireForce = 0;
 				acquireTorque = 0;
+
+				if (otherNode != null)
+				{
+					otherNode.acquireForce = 0;
+					otherNode.acquireTorque = 0;
+				}
 			}
 			else
 			{
@@ -903,11 +933,23 @@ namespace FlexoTubes
 				{
 					acquireForce = activeForce;
 					acquireTorque = activeTorque;
+
+					if (otherNode != null)
+					{
+						otherNode.acquireForce = activeForce;
+						otherNode.acquireTorque = activeTorque;
+					}
 				}
 				else
 				{
 					acquireForce = cachedAcquireForce;
 					acquireTorque = cachedAcquireTorque;
+
+					if (otherNode != null)
+					{
+						otherNode.acquireForce = acquireForce;
+						otherNode.acquireTorque = acquireTorque;
+					}
 				}
 			}
 		}
