@@ -485,10 +485,10 @@ namespace FlexoTubes
 
 			float radius = Mathf.Sqrt(angX * angX + angY * angY);
 
-			if (radius > 10)
+			if (radius > maxRotate)
 			{
 				float theta = Mathf.Atan2(angY, angX);
-				radius = 10;
+				radius = maxRotate;
 				angX = radius * Mathf.Cos(theta);
 				angY = radius * Mathf.Sin(theta);
 			}
@@ -835,6 +835,9 @@ namespace FlexoTubes
 		private void extensionAnimator(float speed, float time)
 		{
 			if (anim == null)
+				return;
+
+			if (anim[extendName] == null)
 				return;
 
 			anim[extendName].speed = speed;
