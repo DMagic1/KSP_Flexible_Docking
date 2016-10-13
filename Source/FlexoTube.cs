@@ -29,7 +29,7 @@ using UnityEngine;
 
 namespace FlexoTubes
 {
-    public class FlexoTube : ModuleDockingNode
+    public class FlexoTube : ModuleDockingNode, IContractObjectiveModule
     {
 		[KSPField]
 		public float maxTranslate;
@@ -105,6 +105,16 @@ namespace FlexoTubes
 
 		public bool setRest;
 		private Vector3 refDir;
+
+		public bool CheckContractObjectiveValidity()
+		{
+			return true;
+		}
+
+		public string GetContractObjectiveType()
+		{
+			return "Dock";
+		}
 		
 		public override void OnStart(PartModule.StartState state)
 		{
