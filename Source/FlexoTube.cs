@@ -53,6 +53,8 @@ namespace FlexoTubes
 		public string MagneticForce = "";
 		[KSPField(guiActive = true)]
 		public string MagneticTorque = "";
+		[KSPField]
+		public string ReferenceTransform = "DockBase";
 
 		[KSPField(isPersistant = true)]
 		public bool MagnetsEnabled = true;
@@ -86,6 +88,7 @@ namespace FlexoTubes
 		private Animation anim;
 		private Transform referenceTranslateTransform;
 		private Transform referenceRotationTransform;
+		private Transform dockBaseTransform;
 		private float cachedAcquireForce;
 		private float cachedAcquireTorque;
 		private float cachedAcquireRange;
@@ -104,14 +107,13 @@ namespace FlexoTubes
 		public float dist = 0;
 
 		public bool setRest;
-		private Vector3 refDir;
 
-		public bool CheckContractObjectiveValidity()
+		new public bool CheckContractObjectiveValidity()
 		{
 			return true;
 		}
 
-		public string GetContractObjectiveType()
+		new public string GetContractObjectiveType()
 		{
 			return "Dock";
 		}
@@ -126,7 +128,7 @@ namespace FlexoTubes
 			anim = part.FindModelAnimators()[0];
 			referenceTranslateTransform = part.FindModelTransform("ReferenceTransform");
 			referenceRotationTransform = part.FindModelTransform("ReferenceRotation");
-			refDir = referenceTranslateTransform.up;
+			dockBaseTransform = part.FindModelTransform(ReferenceTransform);
 
 			frameDist = (maxTranslate * 2) / (float)((frames - 1) / 2);
 			frameRot = (maxRotate * 2) / (float)((frames - 1) / 2);
@@ -283,8 +285,10 @@ namespace FlexoTubes
 				moving = false;
 		}
 
-		private void LateUpdate()
+		new private void LateUpdate()
 		{
+			base.LateUpdate();
+
 			if (!IsDeployed)
 				return;
 
@@ -429,7 +433,7 @@ namespace FlexoTubes
 			Vector3 adjustedProjection = pos + projected;		
 			
 			Vector3 v1 = otherPos - adjustedProjection;
-			Vector3 v2 = refDir * -1f;
+			Vector3 v2 = dockBaseTransform.up * -1f;
 			Vector3 v3 = front;
 
 			theta = Vector3.Angle(v2, v1);
