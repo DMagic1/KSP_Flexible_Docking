@@ -324,10 +324,13 @@ namespace FlexoTubes
 					}
 					if (otherNode.GetType() == typeof(FlexoTube))
 					{
-						if (setRest)
-							setRestPosition(1);
+						if (((FlexoTube)otherNode).IsDeployed)
+						{
+							if (setRest)
+								setRestPosition(1);
 
-						break;
+							break;
+						}
 					}
 
 					if (otherNode.state == "Ready")
